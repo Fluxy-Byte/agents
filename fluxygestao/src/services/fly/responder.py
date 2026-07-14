@@ -23,11 +23,18 @@ DIAMANTE_MSG = (
     "possível consultar dívidas, saídas de caixa ou o relatório financeiro por aqui."
 )
 
-FORA_DE_ESCOPO_MSG = (
-    "Posso te ajudar apenas com assuntos relacionados à sua conta na Fluxy Gestão: "
-    "faturamento, custos, ordens de serviço, dívidas e saídas de caixa (plano "
-    "Diamante), relatório financeiro, boleto da assinatura, serviços e clientes "
-    "cadastrados e o link do seu catálogo. Em que posso ajudar dentro desses temas?"
+NAO_ENTENDI_MSG = "Desculpa, não entendi sua pergunta. 🤔"
+
+MENU_MSG = (
+    "Posso te ajudar com estes temas:\n\n"
+    "1️⃣ Faturamento e custos\n"
+    "2️⃣ Ordens de serviço (por período, cliente ou número)\n"
+    "3️⃣ Clientes cadastrados\n"
+    "4️⃣ Serviços cadastrados\n"
+    "5️⃣ Link do catálogo de um cliente\n"
+    "6️⃣ Dívidas, saídas de caixa e relatório financeiro (plano Diamante)\n"
+    "7️⃣ Boleto da sua assinatura\n\n"
+    "É só perguntar sobre algum desses assuntos!"
 )
 
 PEDIR_PERIODO_MSG = (
@@ -300,47 +307,47 @@ def _handle_boleto(user_id: str) -> str:
     return texto
 
 
-def responder(pergunta: str, target: dict, agent_id: str, agent_name: str, history: Optional[list] = None) -> str:
+def responder(pergunta: str, target: dict, agent_id: str, agent_name: str, history: Optional[list] = None) -> list[str]:
     user = resolve_authenticated_user(target)
     if not user:
-        return NAO_LOCALIZADO_MSG
+        return [NAO_LOCALIZADO_MSG]
 
     try:
         intencao = classificar_pergunta(pergunta, history)
     except Exception:
-        return INSTABILIDADE_MSG
+        return [INSTABILIDADE_MSG]
 
     if intencao.categoria == "fora_de_escopo":
-        return FORA_DE_ESCOPO_MSG
+        return [NAO_ENTENDI_MSG, MENU_MSG]
 
     try:
         if intencao.categoria == "faturamento":
-            return _handle_faturamento(user["id"], intencao)
+            return [_handle_faturamento(user["id"], intencao)]
         if intencao.categoria == "custos":
-            return _handle_custos(user["id"], intencao)
+            return [_handle_custos(user["id"], intencao)]
         if intencao.categoria == "os_periodo":
-            return _handle_os_periodo(user["id"], intencao)
+            return [_handle_os_periodo(user["id"], intencao)]
         if intencao.categoria == "os_cliente":
-            return _handle_os_cliente(user["id"], intencao)
+            return [_handle_os_cliente(user["id"], intencao)]
         if intencao.categoria == "os_detalhe":
-            return _handle_os_detalhe(user["id"], intencao)
+            return [_handle_os_detalhe(user["id"], intencao)]
         if intencao.categoria == "link_cliente":
-            return _handle_link_cliente(user["id"], intencao)
+            return [_handle_link_cliente(user["id"], intencao)]
         if intencao.categoria == "servicos":
-            return _handle_servicos(user["id"])
+            return [_handle_servicos(user["id"])]
         if intencao.categoria == "clientes":
-            return _handle_clientes(user["id"])
+            return [_handle_clientes(user["id"])]
         if intencao.categoria == "dividas":
-            return _handle_dividas(user["id"], intencao)
+            return [_handle_dividas(user["id"], intencao)]
         if intencao.categoria == "saidas_caixa":
-            return _handle_saidas_caixa(user["id"], intencao)
+            return [_handle_saidas_caixa(user["id"], intencao)]
         if intencao.categoria == "relatorio":
-            return _handle_relatorio(user["id"], intencao)
+            return [_handle_relatorio(user["id"], intencao)]
         if intencao.categoria == "boleto":
-            return _handle_boleto(user["id"])
+            return [_handle_boleto(user["id"])]
     except backend_client.DiamanteRequiredError:
-        return DIAMANTE_MSG
+        return [DIAMANTE_MSG]
     except httpx.HTTPError:
-        return INSTABILIDADE_MSG
+        return [INSTABILIDADE_MSG]
 
-    return FORA_DE_ESCOPO_MSG
+    return [NAO_ENTENDI_MSG, MENU_MSG]

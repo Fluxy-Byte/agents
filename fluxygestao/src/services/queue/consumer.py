@@ -23,30 +23,35 @@ def _on_message(channel, method, properties, body):
 
         try:
             pergunta = _extrair_pergunta(payload.get("message"))
-            resposta = gerar_resposta(
+            mensagens = gerar_resposta(
                 pergunta,
                 payload.get("target") or {},
                 agent_info.get("id"),
                 agent_info.get("name"),
                 payload.get("history"),
-            ) if pergunta else ""
+            ) if pergunta else [""]
         except Exception as e:
             print(f"❌ Erro ao gerar resposta do agente {AGENT_NAME}: {e}")
-            resposta = agent_info.get("message") or ""
+            mensagens = [agent_info.get("message") or ""]
 
-        send_task = {
-            "target": payload.get("target"),
-            "waba": payload.get("waba"),
-            "session": payload.get("session"),
-            "message": payload.get("message"),
-            "answer": {
-                "answer": resposta,
-                "audio": "",
-                "image": "",
-            },
-        }
-
-        publish_task_send(channel, send_task)
+        # Uma tarefa de envio por mensagem — quando o agente responde com mais de uma
+        # (ex: "não entendi" + menu de opções), cada uma vira uma bolha separada no
+        # WhatsApp. A sessão só é liberada (finishesProcessing) na última, para não
+        # deixar uma mensagem nova do usuário se intercalar entre elas.
+        for idx, resposta in enumerate(mensagens):
+            send_task = {
+                "target": payload.get("target"),
+                "waba": payload.get("waba"),
+                "session": payload.get("session"),
+                "message": payload.get("message"),
+                "answer": {
+                    "answer": resposta,
+                    "audio": "",
+                    "image": "",
+                },
+                "finishesProcessing": idx == len(mensagens) - 1,
+            }
+            publish_task_send(channel, send_task)
 
         channel.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
