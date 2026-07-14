@@ -26,8 +26,8 @@ DIAMANTE_MSG = (
 FORA_DE_ESCOPO_MSG = (
     "Posso te ajudar apenas com assuntos relacionados à sua conta na Fluxy Gestão: "
     "faturamento, custos, ordens de serviço, dívidas e saídas de caixa (plano "
-    "Diamante), relatório financeiro, boleto da assinatura e o link do seu "
-    "catálogo. Em que posso ajudar dentro desses temas?"
+    "Diamante), relatório financeiro, boleto da assinatura, serviços e clientes "
+    "cadastrados e o link do seu catálogo. Em que posso ajudar dentro desses temas?"
 )
 
 PEDIR_PERIODO_MSG = (
@@ -36,6 +36,29 @@ PEDIR_PERIODO_MSG = (
 )
 
 PEDIR_CLIENTE_MSG = "Qual é o nome do cliente que você quer consultar?"
+
+PEDIR_NUMERO_OS_MSG = "Qual é o número da ordem de serviço que você quer consultar?"
+
+STATUS_PAGAMENTO_LABEL = {
+    "PENDING": "pendente",
+    "PAID": "pago",
+    "PARTIAL": "parcial",
+    "OVERDUE": "atrasado",
+}
+
+STATUS_OS_LABEL = {
+    "PENDING": "em andamento",
+    "COMPLETED": "concluída",
+    "CANCELED": "cancelada",
+}
+
+
+def _status_pagamento(value: Optional[str]) -> str:
+    return STATUS_PAGAMENTO_LABEL.get(value, value or "—")
+
+
+def _status_os(value: Optional[str]) -> str:
+    return STATUS_OS_LABEL.get(value, value or "—")
 
 
 def _brl(value) -> str:
@@ -138,10 +161,73 @@ def _handle_os_cliente(user_id: str, intencao: IntencaoFly) -> str:
     linhas = [f"Ordens de serviço de {client['name']}:"]
     for o in orders[:10]:
         linhas.append(
-            f"- OS #{o.get('numberOrder')}: {o.get('statusOrder')} — {_brl(o.get('totalSale'))}"
+            f"- OS #{o.get('numberOrder')}: {_status_os(o.get('statusOrder'))} — "
+            f"{_brl(o.get('totalSale'))} — entrega {_data_br(o.get('deliveryDate'))} — "
+            f"pagamento {_status_pagamento(o.get('paymentStatus'))}"
         )
     if len(orders) > 10:
         linhas.append(f"... e mais {len(orders) - 10} ordem(ns).")
+    return "\n".join(linhas)
+
+
+def _handle_os_detalhe(user_id: str, intencao: IntencaoFly) -> str:
+    if not intencao.order_number:
+        return PEDIR_NUMERO_OS_MSG
+
+    order = backend_client.get_order_by_number(user_id, intencao.order_number)
+    if not order:
+        return f"Não encontrei nenhuma ordem de serviço com o número {intencao.order_number}."
+
+    client = order.get("client") or {}
+    linhas = [
+        f"OS #{order.get('numberOrder')} — {client.get('name', '—')}",
+        f"Status: {_status_os(order.get('statusOrder'))}",
+        f"Valor total: {_brl(order.get('totalSale'))}",
+        f"Data de entrega: {_data_br(order.get('deliveryDate'))}",
+        f"Status de pagamento: {_status_pagamento(order.get('paymentStatus'))}",
+    ]
+    if order.get("paymentStatus") in ("PARTIAL", "PAID"):
+        linhas.append(f"Valor pago: {_brl(order.get('amountPaid'))}")
+
+    items = order.get("items") or []
+    if items:
+        linhas.append("Serviços:")
+        for item in items:
+            nome = (item.get("service") or {}).get("name", "—")
+            linhas.append(f"- {nome}: {_brl(item.get('finalPrice'))}")
+
+    if order.get("notes"):
+        linhas.append(f"Observações: {order['notes']}")
+
+    return "\n".join(linhas)
+
+
+def _handle_servicos(user_id: str) -> str:
+    services = backend_client.list_services(user_id)
+    if not services:
+        return "Você ainda não tem nenhum serviço cadastrado."
+
+    linhas = [f"Você tem {len(services)} serviço(s) cadastrado(s):"]
+    for s in services[:20]:
+        linhas.append(f"- {s.get('name')}: {_brl(s.get('salePrice'))}")
+    if len(services) > 20:
+        linhas.append(f"... e mais {len(services) - 20} serviço(s).")
+    return "\n".join(linhas)
+
+
+def _handle_clientes(user_id: str) -> str:
+    clients = backend_client.list_clients(user_id)
+    if not clients:
+        return "Você ainda não tem nenhum cliente cadastrado."
+
+    linhas = [f"Você tem {len(clients)} cliente(s) cadastrado(s):"]
+    for c in clients[:20]:
+        linha = f"- {c.get('name')}"
+        if c.get("phone"):
+            linha += f" ({c['phone']})"
+        linhas.append(linha)
+    if len(clients) > 20:
+        linhas.append(f"... e mais {len(clients) - 20} cliente(s).")
     return "\n".join(linhas)
 
 
@@ -236,8 +322,14 @@ def responder(pergunta: str, target: dict, agent_id: str, agent_name: str, histo
             return _handle_os_periodo(user["id"], intencao)
         if intencao.categoria == "os_cliente":
             return _handle_os_cliente(user["id"], intencao)
+        if intencao.categoria == "os_detalhe":
+            return _handle_os_detalhe(user["id"], intencao)
         if intencao.categoria == "link_cliente":
             return _handle_link_cliente(user["id"], intencao)
+        if intencao.categoria == "servicos":
+            return _handle_servicos(user["id"])
+        if intencao.categoria == "clientes":
+            return _handle_clientes(user["id"])
         if intencao.categoria == "dividas":
             return _handle_dividas(user["id"], intencao)
         if intencao.categoria == "saidas_caixa":

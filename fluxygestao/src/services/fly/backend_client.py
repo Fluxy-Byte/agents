@@ -64,6 +64,26 @@ def search_clients(user_id: str, name: str) -> list:
     return resp.json()
 
 
+def list_clients(user_id: str) -> list:
+    resp = _get(f"/users/{user_id}/clients/all")
+    resp.raise_for_status()
+    return resp.json()
+
+
+def list_services(user_id: str) -> list:
+    resp = _get(f"/users/{user_id}/services")
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_order_by_number(user_id: str, number_order: int) -> Optional[dict]:
+    resp = _get(f"/users/{user_id}/orders/{number_order}")
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    return resp.json()
+
+
 def get_client_orders(user_id: str, client_id: str) -> list:
     resp = _get(f"/users/{user_id}/clients/{client_id}/orders")
     resp.raise_for_status()

@@ -20,11 +20,14 @@ Categoria = Literal[
     "custos",
     "os_cliente",
     "os_periodo",
+    "os_detalhe",
     "dividas",
     "saidas_caixa",
     "relatorio",
     "boleto",
     "link_cliente",
+    "servicos",
+    "clientes",
     "fora_de_escopo",
 ]
 
@@ -43,6 +46,10 @@ class IntencaoFly(BaseModel):
         default=None,
         description="Nome do cliente mencionado, para perguntas sobre ordens de serviço de um cliente específico ou o link personalizado de um cliente.",
     )
+    order_number: Optional[int] = Field(
+        default=None,
+        description="Número da ordem de serviço mencionado (ex: 'OS 42', 'ordem número 7'), para perguntas sobre os detalhes de uma OS específica. Deixe vazio se não houver um número claro.",
+    )
 
 
 prompt_intencao = ChatPromptTemplate.from_messages(
@@ -57,11 +64,14 @@ Categorias possíveis:
 - custos: custo das ordens de serviço em um período.
 - os_cliente: ordens de serviço de um cliente específico, identificado pelo nome.
 - os_periodo: quantidade/lista de ordens de serviço abertas em um período ou no dia (não é sobre dinheiro, é sobre as ordens em si).
+- os_detalhe: detalhes de UMA ordem de serviço específica identificada pelo número (ex: "o que tem na OS 42?", "valor da ordem 7", "quando entrega a OS 15?", "status de pagamento da OS 3").
 - dividas: dívidas da empresa.
 - saidas_caixa: despesas / saídas de caixa da empresa.
 - relatorio: relatório comparando saídas de caixa com faturamento.
 - boleto: boleto/fatura de pagamento da própria assinatura da plataforma Fluxy Gestão (não é dívida do cliente do usuário).
 - link_cliente: link personalizado/catálogo de um cliente específico para ele mesmo comprar.
+- servicos: lista dos serviços cadastrados no catálogo da empresa (o que a empresa oferece, com preços).
+- clientes: lista dos clientes cadastrados na empresa.
 - fora_de_escopo: use SOMENTE quando o assunto em si não tem nenhuma relação com os temas acima — ex: saudações genéricas sem pedido nenhum, temas ilegais, drogas, sexologia, ou qualquer coisa fora do escopo da plataforma.
 
 IMPORTANTE: se a pergunta é claramente sobre um dos temas de negócio acima mas está faltando um detalhe (período, nome do cliente etc.), a categoria continua sendo a mesma daquele tema — NUNCA classifique como fora_de_escopo só porque falta um detalhe. Faltar informação não é a mesma coisa que estar fora de escopo. Exemplo: "quero saber meu faturamento" é categoria "faturamento" com start/end vazios (não "fora_de_escopo").
