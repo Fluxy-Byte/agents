@@ -24,7 +24,7 @@ class Rota(TypedDict):
 
 prompt_root = ChatPromptTemplate(
     [
-        ("system", "Responda apenas com produto caso o interesse seja comprar, suporte caso o cliente precise de ajuda com qualquer coisa ou renda-extra caso sua duvida e algo sobre ganhar dinheiro ou algum sobre renda."),
+        ("system", "Responda apenas com as categorias a seguir: produto caso o interesse seja comprar, suporte caso o cliente precise de ajuda com qualquer coisa ou renda-extra caso sua duvida e algo sobre ganhar dinheiro ou algum sobre renda."),
         ("human", "{query}")
     ]
 )
