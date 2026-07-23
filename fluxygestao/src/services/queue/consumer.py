@@ -29,6 +29,7 @@ def _on_message(channel, method, properties, body):
                 agent_info.get("id"),
                 agent_info.get("name"),
                 payload.get("history"),
+                payload.get("session"),
             ) if pergunta else [""]
         except Exception as e:
             print(f"❌ Erro ao gerar resposta do agente {AGENT_NAME}: {e}")

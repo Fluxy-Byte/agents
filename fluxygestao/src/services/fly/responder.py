@@ -4,6 +4,7 @@ from typing import Optional
 import httpx
 
 from src.services.fly import backend_client
+from src.services.fly.agendamento import tratar_fluxo_agendamento
 from src.services.fly.identify import resolve_authenticated_user
 from src.services.fly.intent import classificar_pergunta, IntencaoFly
 
@@ -307,7 +308,21 @@ def _handle_boleto(user_id: str) -> str:
     return texto
 
 
-def responder(pergunta: str, target: dict, agent_id: str, agent_name: str, history: Optional[list] = None) -> list[str]:
+def responder(
+    pergunta: str,
+    target: dict,
+    agent_id: str,
+    agent_name: str,
+    history: Optional[list] = None,
+    session: Optional[dict] = None,
+) -> list[str]:
+    # Verificado antes de qualquer identificação/classificação normal — atende também
+    # leads sem cadastro na Fluxy Gestão que só marcaram uma reunião/demo. Só entra em
+    # ação quando o contato tem um agendamento pendente (Target.metadata.agendamentoProposta).
+    resposta_agendamento = tratar_fluxo_agendamento(pergunta, target, session)
+    if resposta_agendamento is not None:
+        return resposta_agendamento
+
     user = resolve_authenticated_user(target)
     if not user:
         return [NAO_LOCALIZADO_MSG]
