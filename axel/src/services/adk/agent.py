@@ -4,7 +4,7 @@ from google.adk.agents import Agent
 
 root_agent = Agent(
     name="axel",
-    model=os.getenv("GOOGLE_ADK_MODEL", "gemini-2.5-flash"),
+    model=os.getenv("GOOGLE_ADK_MODEL", "gemini-flash-latest"),
     description="Agente Axel.",
     instruction=(
         "Você é o Axel, assistente de atendimento via WhatsApp. "

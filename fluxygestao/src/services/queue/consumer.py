@@ -33,7 +33,15 @@ def _on_message(channel, method, properties, body):
             ) if pergunta else [""]
         except Exception as e:
             print(f"❌ Erro ao gerar resposta do agente {AGENT_NAME}: {e}")
-            mensagens = [agent_info.get("message") or ""]
+
+            if agent_info.get("errorEnabled") and agent_info.get("errorMessage"):
+                mensagens = [agent_info.get("errorMessage")]
+            else:
+                # Toggle de erro desligado: não responde nada nesse turno (o lock de
+                # processamento da sessão se libera sozinho após alguns minutos, no
+                # Orquestrador). Só confirma a mensagem da fila e encerra.
+                channel.basic_ack(delivery_tag=method.delivery_tag)
+                return
 
         # Uma tarefa de envio por mensagem — quando o agente responde com mais de uma
         # (ex: "não entendi" + menu de opções), cada uma vira uma bolha separada no

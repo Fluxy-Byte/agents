@@ -26,7 +26,15 @@ def _on_message(channel, method, properties, body):
             resposta = gerar_resposta(pergunta, agent_info.get("id"), agent_info.get("name")) if pergunta else ""
         except Exception as e:
             print(f"❌ Erro ao gerar resposta do agente {AGENT_NAME}: {e}")
-            resposta = agent_info.get("message") or ""
+
+            if agent_info.get("errorEnabled") and agent_info.get("errorMessage"):
+                resposta = agent_info.get("errorMessage")
+            else:
+                # Toggle de erro desligado: não responde nada nesse turno (o lock de
+                # processamento da sessão se libera sozinho após alguns minutos, no
+                # Orquestrador). Só confirma a mensagem da fila e encerra.
+                channel.basic_ack(delivery_tag=method.delivery_tag)
+                return
 
         send_task = {
             "target": payload.get("target"),
