@@ -11,5 +11,4 @@ def gerar_resposta(pergunta: str, target: dict, agent_id: str, agent_name: str, 
     if not session_id or not user_id:
         raise ValueError("Sessão sem 'id'/'targetId' — não é possível abrir a sessão no ADK.")
 
-    resposta = gerar_resposta_adk(pergunta, user_id=user_id, session_id=session_id)
-    return [resposta]
+    return gerar_resposta_adk(pergunta, user_id=user_id, session_id=session_id)

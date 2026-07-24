@@ -22,19 +22,22 @@ def _on_message(channel, method, properties, body):
 
         try:
             pergunta = _extrair_pergunta(payload.get("message"))
-            mensagens = gerar_resposta(
+            # Cada item é um dict {"texto": ..., "imagem_url": opcional} — um imóvel com
+            # foto vira texto (legenda) + imagem na mesma "parte", cada parte é uma
+            # mensagem/bolha separada no WhatsApp.
+            partes = gerar_resposta(
                 pergunta,
                 payload.get("target") or {},
                 agent_info.get("id"),
                 agent_info.get("name"),
                 payload.get("history"),
                 payload.get("session"),
-            ) if pergunta else [""]
+            ) if pergunta else [{"texto": ""}]
         except Exception as e:
             print(f"❌ Erro ao gerar resposta do agente {AGENT_NAME}: {e}")
 
             if agent_info.get("errorEnabled") and agent_info.get("errorMessage"):
-                mensagens = [agent_info.get("errorMessage")]
+                partes = [{"texto": agent_info.get("errorMessage")}]
             else:
                 # Toggle de erro desligado: não responde nada nesse turno (o lock de
                 # processamento da sessão se libera sozinho após alguns minutos, no
@@ -42,22 +45,22 @@ def _on_message(channel, method, properties, body):
                 channel.basic_ack(delivery_tag=method.delivery_tag)
                 return
 
-        # Uma tarefa de envio por mensagem — quando o agente responde com mais de uma
-        # (ex: "não entendi" + menu de opções), cada uma vira uma bolha separada no
-        # WhatsApp. A sessão só é liberada (finishesProcessing) na última, para não
-        # deixar uma mensagem nova do usuário se intercalar entre elas.
-        for idx, resposta in enumerate(mensagens):
+        # Uma tarefa de envio por parte — quando o agente responde com mais de uma (ex:
+        # texto + fotos dos imóveis), cada uma vira uma bolha separada no WhatsApp. A
+        # sessão só é liberada (finishesProcessing) na última, para não deixar uma
+        # mensagem nova do usuário se intercalar entre elas.
+        for idx, parte in enumerate(partes):
             send_task = {
                 "target": payload.get("target"),
                 "waba": payload.get("waba"),
                 "session": payload.get("session"),
                 "message": payload.get("message"),
                 "answer": {
-                    "answer": resposta,
+                    "answer": parte.get("texto") or "",
                     "audio": "",
-                    "image": "",
+                    "image": parte.get("imagem_url") or "",
                 },
-                "finishesProcessing": idx == len(mensagens) - 1,
+                "finishesProcessing": idx == len(partes) - 1,
             }
             publish_task_send(channel, send_task)
 

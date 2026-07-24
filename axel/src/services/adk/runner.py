@@ -7,8 +7,21 @@ from google.genai import types
 
 from src.infra.adk.session_service import get_session_service
 from src.services.adk.agent import root_agent
+from src.services.adk.metadata_sync import sincronizar_metadados_contato
 
 APP_NAME = os.getenv("GOOGLE_ADK_APP_NAME", "axel")
+
+# Chaves do state que compõem o perfil do lead (spec item 20) — sincronizadas com os
+# metadados do contato no Orquestrador a cada turno.
+CHAVES_METADATA = (
+    "nome",
+    "perfil_imovel",
+    "perfil_financeiro",
+    "recomendacoes",
+    "imoveis_apresentados",
+    "imoveis_interesse",
+    "agendamento",
+)
 
 
 async def _abrir_sessao(session_service, user_id: str, session_id: str) -> None:
@@ -25,26 +38,50 @@ async def _abrir_sessao(session_service, user_id: str, session_id: str) -> None:
         pass
 
 
-async def _executar(pergunta: str, user_id: str, session_id: str) -> str:
+async def _executar(pergunta: str, user_id: str, session_id: str) -> list[dict]:
     # session_service (e o engine/pool do asyncpg por trás dele) é criado e descartado
-    # dentro do mesmo event loop desta chamada — o worker roda cada mensagem num
-    # asyncio.run() próprio (novo loop a cada vez), e um pool asyncpg criado num loop
-    # não pode ser reaproveitado noutro (dá "attached to a different loop"/"Event loop
-    # is closed" na segunda mensagem em diante). Por isso nada aqui é cacheado a nível
-    # de módulo.
+    # dentro do mesmo event loop desta chamada — ver runner.py anterior / consumer.py:
+    # cada mensagem roda num asyncio.run() próprio, e um pool asyncpg não sobrevive entre
+    # loops diferentes.
     async with get_session_service() as session_service:
         await _abrir_sessao(session_service, user_id, session_id)
 
         runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=session_service)
         mensagem = types.Content(role="user", parts=[types.Part(text=pergunta)])
 
-        resposta = ""
+        resposta_final = ""
+        imagens_para_enviar: list[dict] = []
+
         async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=mensagem):
+            for func_response in event.get_function_responses():
+                if func_response.name == "buscar_imoveis":
+                    resposta_tool = func_response.response or {}
+                    for imovel in resposta_tool.get("imoveis", []):
+                        if imovel.get("imagem_url"):
+                            imagens_para_enviar.append({
+                                "titulo": imovel.get("titulo", ""),
+                                "imagem_url": imovel["imagem_url"],
+                            })
+
             if event.is_final_response() and event.content and event.content.parts:
-                resposta = event.content.parts[0].text or resposta
+                resposta_final = event.content.parts[0].text or resposta_final
 
-        return resposta
+        # Sincroniza o perfil acumulado do lead com o Orquestrador (metadados do contato,
+        # spec item 20/21) — best-effort, não deve travar a resposta ao cliente.
+        sessao_final = await session_service.get_session(app_name=APP_NAME, user_id=user_id, session_id=session_id)
+        if sessao_final is not None:
+            metadata = {chave: sessao_final.state[chave] for chave in CHAVES_METADATA if chave in sessao_final.state}
+            if metadata:
+                sincronizar_metadados_contato(user_id, metadata)
+
+        partes: list[dict] = []
+        if resposta_final:
+            partes.append({"texto": resposta_final})
+        for imagem in imagens_para_enviar:
+            partes.append({"texto": imagem["titulo"], "imagem_url": imagem["imagem_url"]})
+
+        return partes or [{"texto": ""}]
 
 
-def gerar_resposta_adk(pergunta: str, user_id: str, session_id: str) -> str:
+def gerar_resposta_adk(pergunta: str, user_id: str, session_id: str) -> list[dict]:
     return asyncio.run(_executar(pergunta, user_id, session_id))
