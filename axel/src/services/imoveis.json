@@ -25,7 +25,7 @@
             "Área de lazer"
         ],
         "descricao": "Apartamento moderno, bem localizado e próximo a comércios, escolas e serviços.",
-        "imagem_url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267"
+        "imagem_url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-002",
@@ -53,7 +53,7 @@
             "Garagem coberta"
         ],
         "descricao": "Casa espaçosa indicada para famílias que procuram quintal e área de lazer.",
-        "imagem_url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6"
+        "imagem_url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-003",
@@ -80,7 +80,7 @@
             "Lavanderia compartilhada"
         ],
         "descricao": "Apartamento compacto próximo a universidades e serviços.",
-        "imagem_url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688"
+        "imagem_url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-004",
@@ -109,7 +109,7 @@
             "Condomínio fechado"
         ],
         "descricao": "Casa de alto padrão com ambientes amplos, piscina e área gourmet.",
-        "imagem_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c"
+        "imagem_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-005",
@@ -137,7 +137,7 @@
             "Salão de festas"
         ],
         "descricao": "Apartamento amplo com varanda gourmet e condomínio completo.",
-        "imagem_url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c"
+        "imagem_url": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-006",
@@ -164,7 +164,7 @@
             "Cozinha americana"
         ],
         "descricao": "Casa compacta com bom custo-benefício e possibilidade de financiamento.",
-        "imagem_url": "https://images.unsplash.com/photo-1570129477492-45c003edd2be"
+        "imagem_url": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-007",
@@ -193,7 +193,7 @@
             "Elevador"
         ],
         "descricao": "Cobertura duplex com área gourmet privativa e vista panorâmica.",
-        "imagem_url": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3"
+        "imagem_url": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-008",
@@ -222,7 +222,7 @@
             "Closet"
         ],
         "descricao": "Casa moderna com piscina e área de lazer integrada.",
-        "imagem_url": "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde"
+        "imagem_url": "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-009",
@@ -249,7 +249,7 @@
             "Garagem"
         ],
         "descricao": "Apartamento econômico indicado para primeiro imóvel.",
-        "imagem_url": "https://images.unsplash.com/photo-1493809842364-78817add7ffb"
+        "imagem_url": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1080&q=80&fm=jpg&fit=max"
     },
     {
         "id": "IMV-010",
@@ -280,6 +280,6 @@
             "Condomínio fechado"
         ],
         "descricao": "Residência premium com ampla área de lazer e acabamento de alto padrão.",
-        "imagem_url": "https://images.unsplash.com/photo-1600607688969-a5bfcd646154"
+        "imagem_url": "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=1080&q=80&fm=jpg&fit=max"
     }
 ]
